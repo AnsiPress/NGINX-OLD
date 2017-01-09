@@ -1,12 +1,18 @@
 # NGINX Debian/Ubuntu Package Building:
 
+## NGINX MODULES:
+
+https://docs.google.com/spreadsheets/d/1Vor4TxODlBbBfKE_jJz6Hl7y1HIRsUV_p1FYdeiD1vU/
+
+## Build Services:
+
 1. [Launchpad] (https://github.com/AnsiPress/NGINX#launchpad)
 2. [OpenSUSE Build Services] (https://github.com/AnsiPress/NGINX#opensuse-build-services)
 
 
-## Launchpad:
+### Launchpad:
 
-### Create Account:
+#### Create Account:
 
 https://launchpad.net/+login
 
@@ -14,7 +20,7 @@ https://launchpad.net/+login
 
 Check your INBOX and click on link to verify.
 
-### Generate GPG/PGP Keys:
+#### Generate GPG/PGP Keys:
 
 ```bash
 ^_^[Mitesh@Shah:~]$ gpg --gen-key
@@ -63,7 +69,7 @@ My favorite is running a disk write performance benchmark using:
 dd bs=1M count=1024 if=/dev/zero of=test conv=fdatasync
 ```
 
-### List Keys:
+#### List Keys:
 
 ```bash
 ^_^[Mitesh@Shah:~]$ gpg --list-keys
@@ -74,7 +80,7 @@ uid       [ultimate] Mitesh Shah (Mitesh Shah GPG Key) <Mr.Miteshah@gmail.com>
 sub   4096R/A828B326 2016-12-01
 ```
 
-### Making An ASCII Armored Version Your Public Key:
+#### Making An ASCII Armored Version Your Public Key:
 
 ```bash
 ^_^[Mitesh@Shah:~]$ gpg --output MiteshShah.asc --export -a $GPGKEY
@@ -83,13 +89,13 @@ sub   4096R/A828B326 2016-12-01
 NOTE: In This Example $GPGKEY = BE143B73
 
 
-### Upload Keys To Ubuntu Key Server:
+#### Upload Keys To Ubuntu Key Server:
 
 ```bash
 ^_^[Mitesh@Shah:~]$ gpg --send-keys --keyserver keyserver.ubuntu.com $GPGKEY
 ```
 
-### GPG Key FingerPrint:
+#### GPG Key FingerPrint:
 
 ```bash
 ^_^[Mitesh@Shah:~]$ gpg --fingerprint
@@ -101,35 +107,36 @@ uid       [ultimate] Mitesh Shah (Mitesh Shah GPG Key) <Mr.Miteshah@gmail.com>
 sub   4096R/A828B326 2016-12-01
 ```
 
-### Add GPG/PGP Keys To LaunchPad:
+#### Add GPG/PGP Keys To LaunchPad:
 
 1. https://launchpad.net/people/+me/+editpgpkeys
 1. Sign The Code Of Conduct
 1. Create A LaunchPad PPA: NGINX
 
 
-## OpenSUSE Build Services:
+### OpenSUSE Build Services:
 
-### Create Account:
+#### Create Account:
 
 https://build.opensuse.org/
 
 After that check you INBOX and click of verification link
 
-### Create Project:
+#### Create Project:
 
 1. Click on your profile name
 2. Click on Home Project (Upper Right Corner)
 3. Click on Create project
 
-### Create Packages:
+#### Create Packages:
 
 1. Click on package
 2. Fill the package description
 3. Save changes
 
-### Define Build targets
+#### Define Build targets
 
 1. Click on build targets
 2. Define your build targets
 3. Click on "Add selected repositories"
+
