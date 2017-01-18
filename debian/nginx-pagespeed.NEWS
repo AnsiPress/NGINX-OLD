@@ -1,0 +1,5 @@
+nginx-pagespeed (1.10.2-1) unstable; urgency=medium
+
+  Starting with this release we had added pagespeed module in nginx-pagespeed package.
+
+ -- Mitesh Shah <Mr.Miteshah@gmail.com>  Mon, 17 Jan 2017 14:41:49 +0530

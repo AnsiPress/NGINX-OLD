@@ -10,7 +10,7 @@ debian_ldflags:=$(shell dpkg-buildflags --get LDFLAGS)
 DEBIAN_NGINX_PERL_LDFLAGS:= $(shell DEB_BUILD_MAINT_OPTIONS=hardening=+all,-pie dpkg-buildflags --get LDFLAGS)
 export DEBIAN_NGINX_PERL_LDFLAGS
 
-FLAVOURS := full light extras
+FLAVOURS := full light extras pagespeed
 DYN_MODS := \
 	http-auth-pam \
 	http-cache-purge \
@@ -135,6 +135,28 @@ extras_configure_flags := \
 			--add-dynamic-module=$(MODULESDIR)/nginx-upstream-fair \
 			--add-dynamic-module=$(MODULESDIR)/ngx_http_substitutions_filter_module
 
+pagespeed_configure_flags := \
+			$(common_configure_flags) \
+			--with-http_addition_module \
+			--with-http_geoip_module=dynamic \
+			--with-http_gunzip_module \
+			--with-http_gzip_static_module \
+			--with-http_image_filter_module=dynamic \
+			--with-http_secure_link_module \
+			--with-http_sub_module \
+			--with-http_xslt_module=dynamic \
+			--add-dynamic-module=$(MODULESDIR)/headers-more-nginx-module \
+			--add-dynamic-module=$(MODULESDIR)/nginx-auth-pam \
+			--add-dynamic-module=$(MODULESDIR)/nginx-cache-purge \
+			--add-dynamic-module=$(MODULESDIR)/nginx-echo \
+			--add-dynamic-module=$(MODULESDIR)/ngx-fancyindex \
+			--add-dynamic-module=$(MODULESDIR)/nchan \
+			--add-dynamic-module=$(MODULESDIR)/nginx-lua \
+			--add-dynamic-module=$(MODULESDIR)/nginx-upload-progress \
+			--add-dynamic-module=$(MODULESDIR)/nginx-upstream-fair \
+			--add-dynamic-module=$(MODULESDIR)/ngx_http_substitutions_filter_module \
+			--add-dynamic-module=$(MODULESDIR)/ngx_pagespeed
+
 %:
 	dh $@ --with systemd
 
@@ -169,6 +191,8 @@ strip.mods.%:
 config.arch.%:
 	dh_testdir
 	mkdir -p $(BUILDDIR_$*)
+	tar xvf $(MODULESDIR)/ngx_pagespeed/psol.tar.gz -C $(MODULESDIR)/ngx_pagespeed
+	ls $(MODULESDIR)/ngx_pagespeed
 	cp -Pa $(CURDIR)/auto $(BUILDDIR_$*)/
 	cp -Pa $(CURDIR)/conf $(BUILDDIR_$*)/
 	cp -Pa $(CURDIR)/configure $(BUILDDIR_$*)/

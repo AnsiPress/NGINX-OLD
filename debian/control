@@ -1,10 +1,11 @@
 Source: nginx
 Section: httpd
 Priority: optional
-Maintainer: Debian Nginx Maintainers <pkg-nginx-maintainers@lists.alioth.debian.org>
+Maintainer: Mitesh Shah <Mr.Miteshah@gmail.com>
 Uploaders: Kartik Mistry <kartik@debian.org>,
            Michael Lustfield <michael@lustfield.net>,
-           Christos Trochalakis <yatiohi@ideopolis.gr>
+           Christos Trochalakis <yatiohi@ideopolis.gr>,
+           Mitesh Shah <Mr.Miteshah@gmail.com>,
 Build-Depends: autotools-dev,
                debhelper (>= 9),
                dh-systemd (>= 1.5),
@@ -30,16 +31,16 @@ Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/nginx.git
 
 Package: nginx
 Architecture: all
-Depends: nginx-full (<< ${source:Version}.1~) | nginx-light (<< ${source:Version}.1~) | nginx-extras (<< ${source:Version}.1~),
-         nginx-full (>= ${source:Version}) | nginx-light (>= ${source:Version}) | nginx-extras (>= ${source:Version}),
+Depends: nginx-full (<< ${source:Version}.1~) | nginx-light (<< ${source:Version}.1~) | nginx-extras (<< ${source:Version}.1~) | nginx-pagespeed (<< ${source:Version}.1~),
+         nginx-full (>= ${source:Version}) | nginx-light (>= ${source:Version}) | nginx-extras (>= ${source:Version}) | nginx-pagespeed (>= ${source:Version}),
          ${misc:Depends}
 Description: small, powerful, scalable web/proxy server
  Nginx ("engine X") is a high-performance web and reverse proxy server
  created by Igor Sysoev. It can be used both as a standalone web server
  and as a proxy to reduce the load on back-end HTTP or mail servers.
  .
- This is a dependency package to install either nginx-full (by default) or
- nginx-light.
+ This is a dependency package to install either nginx-full (by default),
+ nginx-light, nginx-extras or nginx-pagespeed.
 
 Package: nginx-doc
 Architecture: all
@@ -82,7 +83,7 @@ Depends: libnginx-mod-http-auth-pam (= ${binary:Version}),
          ${shlibs:Depends}
 Breaks: nginx (<< 1.4.5-1)
 Provides: httpd, httpd-cgi, nginx
-Conflicts: nginx-extras, nginx-light
+Conflicts: nginx-extras, nginx-light, nginx-pagespeed
 Suggests: nginx-doc (= ${source:Version})
 Description: nginx web/proxy server (standard version)
  Nginx ("engine X") is a high-performance web and reverse proxy server
@@ -116,7 +117,7 @@ Depends: libnginx-mod-http-echo (= ${binary:Version}),
          ${shlibs:Depends}
 Breaks: nginx (<< 1.4.5-1)
 Provides: httpd, httpd-cgi, nginx
-Conflicts: nginx-extras, nginx-full
+Conflicts: nginx-extras, nginx-full, nginx-pagespeed
 Suggests: nginx-doc (= ${source:Version})
 Description: nginx web/proxy server (basic version)
  Nginx ("engine X") is a high-performance web and reverse proxy server
@@ -159,7 +160,7 @@ Depends: libnginx-mod-http-auth-pam (= ${binary:Version}),
          ${shlibs:Depends}
 Breaks: nginx (<< 1.4.5-1)
 Provides: httpd, httpd-cgi, nginx
-Conflicts: nginx-full, nginx-light
+Conflicts: nginx-full, nginx-light, nginx-pagespeed
 Suggests: nginx-doc (= ${source:Version})
 Description: nginx web/proxy server (extended version)
  Nginx ("engine X") is a high-performance web and reverse proxy server
@@ -184,6 +185,51 @@ Description: nginx web/proxy server (extended version)
  THIRD PARTY MODULES: Auth PAM, Cache Purge, DAV Ext, Echo, Fancy Index,
  Headers More, Embedded Lua, HTTP Substitutions, Nchan, Upload Progress,
  Upstream Fair Queue.
+
+Package: nginx-pagespeed
+Architecture: any
+Priority: extra
+Depends: libnginx-mod-http-auth-pam (= ${binary:Version}),
+         libnginx-mod-http-cache-purge (= ${binary:Version}),
+         libnginx-mod-http-echo (= ${binary:Version}),
+         libnginx-mod-http-fancyindex (= ${binary:Version}),
+         libnginx-mod-http-geoip (= ${binary:Version}),
+         libnginx-mod-http-headers-more-filter (= ${binary:Version}),
+         libnginx-mod-http-image-filter (= ${binary:Version}),
+         libnginx-mod-http-lua (= ${binary:Version}),
+         libnginx-mod-http-subs-filter (= ${binary:Version}),
+         libnginx-mod-http-uploadprogress (= ${binary:Version}),
+         libnginx-mod-http-upstream-fair (= ${binary:Version}),
+         libnginx-mod-http-xslt-filter (= ${binary:Version}),
+         libnginx-mod-nchan (= ${binary:Version}),
+         nginx-common (= ${source:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends}
+Breaks: nginx (<< 1.4.5-1)
+Provides: httpd, httpd-cgi, nginx
+Conflicts: nginx-full, nginx-light, nginx-extras
+Suggests: nginx-doc (= ${source:Version})
+Description: nginx web/proxy server (extended version)
+ Nginx ("engine X") is a high-performance web and reverse proxy server
+ created by Igor Sysoev. It can be used both as a standalone web server
+ and as a proxy to reduce the load on back-end HTTP or mail servers.
+ .
+ This package provides a version of nginx with the standard modules, plus
+ extra features and modules such as the Perl module, which allows the
+ addition of Perl in configuration files.
+ .
+ STANDARD HTTP MODULES: Core, Access, Auth Basic, Auto Index, Browser, Empty
+ GIF, FastCGI, Geo, Limit Connections, Limit Requests, Map, Memcached, Proxy,
+ Referer, Rewrite, SCGI, Split Clients, UWSGI.
+ .
+ OPTIONAL HTTP MODULES: Addition, Auth Request, Charset, GeoIP,
+ Gunzip, Gzip, Gzip Precompression, Headers, HTTP/2, Image Filter, Index, Log,
+ Real IP, Slice, Secure Link, SSI, SSL,
+ Stub Status, Substitution, Thread Pool, Upstream, User ID, XSLT.
+ .
+ THIRD PARTY MODULES: Auth PAM, Cache Purge, Echo, Fancy Index,
+ Headers More, Embedded Lua, HTTP Substitutions, Nchan, Upload Progress,
+ Upstream Fair Queue, PageSpeed.
 
 Package: libnginx-mod-http-geoip
 Architecture: any
