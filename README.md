@@ -165,7 +165,7 @@ After that check you INBOX and click of verification link
 ### Launchpad
 
 ```
-^_^[Mitesh@Shah:~]$ dput ppa:rtcamp/nginx ~/PPA/nginx/nginx_1.10.2-1+xenial_source.changes
+^_^[Mitesh@Shah:~]$ dput ppa:miteshshah/nginx-pagespeed ~/PPA/nginx/nginx_1.10.2-1+xenial_source.changes
 ```
 
 ### OpenSUSE Builder
