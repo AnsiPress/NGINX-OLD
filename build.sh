@@ -29,7 +29,7 @@ sudo apt-get -y install git dh-make devscripts debhelper dput gnupg-agent dh-sys
 
 # Lets Clone Launchpad repository
 ppa_lib_echo "Copy Debian files, please wait"
-rm -rf /tmp/launchpad && git clone -b master https://github.com/AnsiPress/NGINX.git /tmp/launchpad \
+rm -rf /tmp/NGINX && git clone -b master https://github.com/AnsiPress/NGINX.git /tmp/NGINX \
 || ppa_error "Unable to clone NGINX repository, exit status = " $?
 
 # Configure NGINX PPA
@@ -53,7 +53,7 @@ rm debian/*.ex debian/*.EX \
 || ppa_error "Unable to remove unwanted files, exit status = " $?
 
 # Let's copy files
-cp -av /tmp/launchpad/NGINX/debian/* ~/PPA/nginx/nginx-${NGINX_VERSION}/debian/ \
+cp -av /tmp/NGINX/debian/* ~/PPA/nginx/nginx-${NGINX_VERSION}/debian/ \
 || ppa_error "Unable to copy launchpad debian files, exit status = " $?
 
 
