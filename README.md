@@ -140,3 +140,43 @@ After that check you INBOX and click of verification link
 2. Define your build targets
 3. Click on "Add selected repositories"
 
+
+## Build NGINX Package:
+
+### Download NGINX Build Script
+```
+^_^[Mitesh@Shah:~]$ wget -c https://raw.githubusercontent.com/AnsiPress/NGINX/master/build.sh
+^_^[Mitesh@Shah:~]$ bash build.sh 1.10.2 Mr.Miteshah@gmail.com
+```
+
+### Make A Debian Source For Upload To PPA:
+
+```
+^_^[Mitesh@Shah:~]$ cd ~/PPA/nginx/nginx-1.10.2
+# For new nginx version 1.10.2
+^_^[Mitesh@Shah:~]$ debuild -S -sa --source-option=--include-binaries -k'BE143B73'
+# For minor changes on existing nginx 1.10.2
+# Download nginx_1.10.2.orig.tar.xz from launchpad
+^_^[Mitesh@Shah:~]$ debuild -S -k'BE143B73'
+```
+
+## Upload NGINX Package:
+
+### Launchpad
+
+```
+^_^[Mitesh@Shah:~]$ dput ppa:rtcamp/nginx ~/PPA/nginx/nginx_1.10.2-1+xenial_source.changes
+```
+
+### OpenSUSE Builder
+
+* Go to package page
+* Click on add file
+* Now upload following files
+
+```
+nginx_1.10.2-1+xenial.dsc
+nginx_1.10.2-1+xenial_source.build
+nginx_1.10.2-1+xenial_source.changes
+nginx_1.10.2-1+xenial.debian.tar.xz
+```
