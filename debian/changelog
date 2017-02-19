@@ -1,3 +1,10 @@
+nginx (1.10.3-1+xenial) xenial; urgency=medium
+
+  * Updated NGINX
+  * separate nginx config from nginx.conf to /etc/nginx/conf.d
+
+ -- Mitesh Shah <Mr.Miteshah@gmail.com>  Sun, 19 Feb 2017 14:41:49 +0530
+
 nginx (1.10.2-1+xenial) xenial; urgency=medium
 
   * Create nginx-pagespeed Package
