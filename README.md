@@ -146,17 +146,17 @@ After that check you INBOX and click of verification link
 ### Download NGINX Build Script
 ```
 ^_^[Mitesh@Shah:~]$ wget -c https://raw.githubusercontent.com/AnsiPress/NGINX/master/build.sh
-^_^[Mitesh@Shah:~]$ bash build.sh 1.10.2 Mr.Miteshah@gmail.com
+^_^[Mitesh@Shah:~]$ bash build.sh 1.10.3 Mr.Miteshah@gmail.com
 ```
 
 ### Make A Debian Source For Upload To PPA:
 
 ```
-^_^[Mitesh@Shah:~]$ cd ~/PPA/nginx/nginx-1.10.2
-# For new nginx version 1.10.2
+^_^[Mitesh@Shah:~]$ cd ~/PPA/nginx/nginx-1.10.3
+# For new nginx version 1.10.3
 ^_^[Mitesh@Shah:~]$ debuild -S -sa --source-option=--include-binaries -k'BE143B73'
-# For minor changes on existing nginx 1.10.2
-# Download nginx_1.10.2.orig.tar.xz from launchpad
+# For minor changes on existing nginx 1.10.3
+# Download nginx_1.10.3.orig.tar.xz from launchpad
 ^_^[Mitesh@Shah:~]$ debuild -S -k'BE143B73'
 ```
 
@@ -165,7 +165,7 @@ After that check you INBOX and click of verification link
 ### Launchpad
 
 ```
-^_^[Mitesh@Shah:~]$ dput ppa:miteshshah/nginx-pagespeed ~/PPA/nginx/nginx_1.10.2-1+xenial_source.changes
+^_^[Mitesh@Shah:~]$ dput ppa:ansipress/nginx ~/PPA/nginx/nginx_1.10.3-1+xenial_source.changes
 ```
 
 ### OpenSUSE Builder
@@ -175,8 +175,8 @@ After that check you INBOX and click of verification link
 * Now upload following files
 
 ```
-nginx_1.10.2-1+xenial.dsc
-nginx_1.10.2-1+xenial_source.build
-nginx_1.10.2-1+xenial_source.changes
-nginx_1.10.2-1+xenial.debian.tar.xz
+nginx_1.10.3-1+xenial.dsc
+nginx_1.10.3-1+xenial_source.build
+nginx_1.10.3-1+xenial_source.changes
+nginx_1.10.3-1+xenial.debian.tar.xz
 ```
