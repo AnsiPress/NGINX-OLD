@@ -157,7 +157,7 @@ After that check you INBOX and click of verification link
 ^_^[Mitesh@Shah:~]$ debuild -S -sa --source-option=--include-binaries -k'BE143B73'
 # For minor changes on existing nginx 1.10.3
 # Download nginx_1.10.3.orig.tar.xz from launchpad
-^_^[Mitesh@Shah:~]$ debuild -S -k'BE143B73'
+^_^[Mitesh@Shah:~]$ debuild -S --source-option=--include-binaries -k'BE143B73'
 ```
 
 ## Upload NGINX Package:
