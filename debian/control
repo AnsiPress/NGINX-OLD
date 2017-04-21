@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Mitesh Shah <Mr.Miteshah@gmail.com>
 Uploaders: Kartik Mistry <kartik@debian.org>,
            Michael Lustfield <michael@lustfield.net>,
-           Christos Trochalakis <yatiohi@ideopolis.gr>,
+           Christos Trochalakis <ctrochalakis@debian.org>,
            Mitesh Shah <Mr.Miteshah@gmail.com>,
 Build-Depends: autotools-dev,
                debhelper (>= 9),
@@ -23,6 +23,7 @@ Build-Depends: autotools-dev,
                libssl-dev,
                libxslt1-dev,
                po-debconf,
+               quilt,
                zlib1g-dev
 Standards-Version: 3.9.8.0
 Homepage: http://nginx.net
@@ -57,7 +58,7 @@ Description: small, powerful, scalable web/proxy server - documentation
 Package: nginx-common
 Architecture: all
 Multi-Arch: foreign
-Depends: lsb-base, ${misc:Depends}
+Depends: lsb-base (>= 3.0-6), ${misc:Depends}
 Suggests: fcgiwrap, nginx-doc, ssl-cert
 Description: small, powerful, scalable web/proxy server - common files
  Nginx ("engine X") is a high-performance web and reverse proxy server
@@ -70,6 +71,7 @@ Description: small, powerful, scalable web/proxy server - common files
 Package: nginx-full
 Architecture: any
 Depends: libnginx-mod-http-auth-pam (= ${binary:Version}),
+         libnginx-mod-http-dav-ext (= ${binary:Version}),
          libnginx-mod-http-echo (= ${binary:Version}),
          libnginx-mod-http-geoip (= ${binary:Version}),
          libnginx-mod-http-image-filter (= ${binary:Version}),
@@ -140,6 +142,7 @@ Package: nginx-extras
 Architecture: any
 Priority: extra
 Depends: libnginx-mod-http-auth-pam (= ${binary:Version}),
+         libnginx-mod-http-dav-ext (= ${binary:Version}),
          libnginx-mod-http-cache-purge (= ${binary:Version}),
          libnginx-mod-http-echo (= ${binary:Version}),
          libnginx-mod-http-fancyindex (= ${binary:Version}),
@@ -416,3 +419,12 @@ Description: Substitution filter module for Nginx
  substitutions on response bodies. The module is quite different from Nginx's
  native Substitution module. It scans the output chains buffer and
  matches string line by line, just like Apache's mod_substitute.
+
+Package: libnginx-mod-http-dav-ext
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: WebDAV missing commands support for Nginx
+ WebDAV Ext module complements the Nginx WebDAV module to provide a full
+ WebDAV support.
+ .
+ WebDAV Ext provides the missing PROPFIND & OPTIONS methods.

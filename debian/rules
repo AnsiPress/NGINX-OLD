@@ -1,9 +1,9 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=1
 
-export DEB_BUILD_MAINT_OPTIONS=hardening=+all,-pie
-debian_cflags:=$(shell dpkg-buildflags --get CFLAGS) $(shell dpkg-buildflags --get CPPFLAGS)
-debian_ldflags:=$(shell dpkg-buildflags --get LDFLAGS)
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+debian_cflags:=$(shell dpkg-buildflags --get CFLAGS) -fPIC $(shell dpkg-buildflags --get CPPFLAGS)
+debian_ldflags:=$(shell dpkg-buildflags --get LDFLAGS) -fPIC
 
 # export necessary perl hardenging flags
 # see: src/http/modules/perl/Makefile.PL
@@ -14,6 +14,7 @@ FLAVOURS := full light extras pagespeed
 DYN_MODS := \
 	http-auth-pam \
 	http-cache-purge \
+	http-dav-ext \
 	http-echo \
 	http-fancyindex \
 	http-geoip \
@@ -43,6 +44,9 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	MAKEFLAGS += -j$(NUMJOBS)
 endif
+
+MODULESPATCHDIR = $(CURDIR)/debian/patches/modules
+modules_with_patches := $(notdir $(wildcard $(CURDIR)/debian/patches/modules/*))
 
 # configure flags
 common_configure_flags := \
@@ -99,7 +103,7 @@ full_configure_flags := \
 			--with-mail=dynamic \
 			--with-mail_ssl_module \
 			--add-dynamic-module=$(MODULESDIR)/nginx-auth-pam \
-			--add-module=$(MODULESDIR)/nginx-dav-ext-module \
+			--add-dynamic-module=$(MODULESDIR)/nginx-dav-ext-module \
 			--add-dynamic-module=$(MODULESDIR)/nginx-echo \
 			--add-dynamic-module=$(MODULESDIR)/nginx-upstream-fair \
 			--add-dynamic-module=$(MODULESDIR)/ngx_http_substitutions_filter_module
@@ -125,7 +129,7 @@ extras_configure_flags := \
 			--add-dynamic-module=$(MODULESDIR)/headers-more-nginx-module \
 			--add-dynamic-module=$(MODULESDIR)/nginx-auth-pam \
 			--add-dynamic-module=$(MODULESDIR)/nginx-cache-purge \
-			--add-module=$(MODULESDIR)/nginx-dav-ext-module \
+			--add-dynamic-module=$(MODULESDIR)/nginx-dav-ext-module \
 			--add-dynamic-module=$(MODULESDIR)/nginx-development-kit \
 			--add-dynamic-module=$(MODULESDIR)/nginx-echo \
 			--add-dynamic-module=$(MODULESDIR)/ngx-fancyindex \
@@ -160,10 +164,10 @@ pagespeed_configure_flags := \
 %:
 	dh $@ --with systemd
 
-override_dh_auto_configure: $(foreach flavour,$(FLAVOURS),config.arch.$(flavour))
+override_dh_auto_configure: config_patch_modules $(foreach flavour,$(FLAVOURS),config.arch.$(flavour))
 override_dh_auto_build:     $(foreach flavour,$(FLAVOURS),build.arch.$(flavour))
 override_dh_strip:          $(foreach flavour,$(FLAVOURS),strip.arch.$(flavour)) $(foreach mod,$(DYN_MODS),strip.mods.$(mod))
-override_dh_clean:          $(foreach flavour,$(FLAVOURS),clean.$(flavour))
+override_dh_clean:          clean_patch_modules $(foreach flavour,$(FLAVOURS),clean.$(flavour))
 	dh_clean
 
 override_dh_install:
@@ -188,6 +192,17 @@ strip.arch.%:
 strip.mods.%:
 	dh_strip --package=libnginx-mod-$(*) -O--automatic-dbgsym
 
+config_patch_modules: $(foreach mod,$(modules_with_patches),config.patch.$(mod))
+config.patch.%:
+	cd $(MODULESDIR)/$* && QUILT_PATCHES=$(MODULESPATCHDIR)/$* quilt push -a
+
+clean_patch_modules: $(foreach mod,$(modules_with_patches),clean.patch.$(mod))
+clean.patch.%:
+	if [ -s $(MODULESDIR)/$*/.pc/applied-patches ]; then \
+		cd $(MODULESDIR)/$* && QUILT_PATCHES=$(MODULESPATCHDIR)/$* quilt pop -q -a; \
+		rm -rf $(MODULESDIR)/$*/.pc; \
+	fi
+
 config.arch.%:
 	dh_testdir
 	mkdir -p $(BUILDDIR_$*)
@@ -203,3 +218,5 @@ config.arch.%:
 
 clean.%:
 	rm -rf $(BUILDDIR_$*)
+
+.PHONY: config_patch_modules clean_patch_modules

@@ -6,11 +6,11 @@ README for Modules versions
 
  headers-more-nginx-module
   Homepage: https://github.com/agentzh/headers-more-nginx-module
-  Version: v0.31
+  Version: v0.32
 
  nginx-development-kit
   Homepage: https://github.com/simpl/ngx_devel_kit/
-  Version: v0.3.0rc1
+  Version: v0.3.0
 
  nginx-auth-pam
   Homepage: https://github.com/stogh/ngx_http_auth_pam_module
@@ -22,15 +22,19 @@ README for Modules versions
 
  nginx-lua
   Homepage: https://github.com/openresty/lua-nginx-module
-  Version: v0.10.6
+  Version: v0.10.7
+  Patch: openssl-1.1.0.patch
 
  nginx-upstream-fair
   Homepage: https://github.com/gnosek/nginx-upstream-fair
-  Version: a18b409+pull/21
+  Version: a18b409
+  Patch: dynamic-module.patch
+  Patch: openssl-1.1.0.patch
+  Patch: drop-default-port.patch
 
  nchan
   Homepage: https://github.com/slact/nchan
-  Version: 1.0.2
+  Version: 1.0.8
 
  nginx-upload-progress
   Homepage: https://github.com/masterzen/nginx-upload-progress-module
@@ -39,12 +43,13 @@ README for Modules versions
 
  nginx-cache-purge
   Homepage: https://github.com/FRiCKLE/ngx_cache_purge/
-  Version: 2.3+pull/45
+  Version: 2.3
+  Patch: dynamic-module.patch
 
  nginx-dav-ext-module
   Homepage: https://github.com/arut/nginx-dav-ext-module
   Version: v0.0.3
-  Dynamic: No, https://github.com/arut/nginx-dav-ext-module/issues/21
+  Patch: dynamic-module.patch
 
  ngx-fancyindex
   Homepage: https://github.com/aperezdc/ngx-fancyindex
@@ -52,4 +57,5 @@ README for Modules versions
 
  ngx_http_substitutions_filter_module
   Homepage: https://github.com/yaoweibin/ngx_http_substitutions_filter_module
-  Version: v0.6.4+pull/19
+  Version: v0.6.4
+  Patch: dynamic-module.patch

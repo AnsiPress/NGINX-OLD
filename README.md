@@ -170,6 +170,8 @@ After that check you INBOX and click of verification link
 
 ### OpenSUSE Builder
 
+* Open https://build.opensuse.org
+* Click on Home Project
 * Go to package page
 * Click on add file
 * Now upload following files
@@ -179,4 +181,16 @@ nginx_1.10.3-1+xenial.dsc
 nginx_1.10.3-1+xenial_source.build
 nginx_1.10.3-1+xenial_source.changes
 nginx_1.10.3-1+xenial.debian.tar.xz
+```
+
+```
+$ sudo apt-get install osc
+$ cd
+$ osc co home:MiteshShah/nginx-pagespeed
+$ cd home:MiteshShah/nginx-pagespeed
+$ osc rm *
+$ rsync -avzP --exclude="modules" --exclude="nginx-1.12.0" ~/PPA/nginx ~/home:MiteshShah/nginx-pagespeed/
+$ osc add *
+$ osc ci -m "NGINX 1.12.0"
+
 ```
