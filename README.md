@@ -186,10 +186,10 @@ nginx_1.10.3-1+xenial.debian.tar.xz
 ```
 $ sudo apt-get install osc
 $ cd
-$ osc co home:MiteshShah/nginx-pagespeed
-$ cd home:MiteshShah/nginx-pagespeed
+$ osc co home:MiteshShah/nginx
+$ cd home:MiteshShah/nginx
 $ osc rm *
-$ rsync -avzP --exclude="modules" --exclude="nginx-1.12.0" ~/PPA/nginx ~/home:MiteshShah/nginx-pagespeed/
+$ rsync -avzP --exclude="modules" --exclude="nginx-1.12.0" ~/PPA/nginx/* ~/home:MiteshShah/nginx/
 $ osc add *
 $ osc ci -m "NGINX 1.12.0"
 

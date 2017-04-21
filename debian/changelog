@@ -1,6 +1,9 @@
-nginx (1.12.0-2+xenial) xenial; urgency=medium
+nginx (1.12.0-4+xenial) xenial; urgency=medium
 
   * 1.12.x stable branch.
+  * https://github.com/openresty/echo-nginx-module/pull/65
+  * curl -L https://github.com/openresty/echo-nginx-module/pull/65.patch > 65.patch
+  * git apply  65.patch
 
  -- Mitesh Shah <Mr.Miteshah@gmail.com>  Fri, 21 Feb 2017 14:41:49 +0530
 
