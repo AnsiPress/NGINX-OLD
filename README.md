@@ -6,8 +6,8 @@ https://docs.google.com/spreadsheets/d/1Vor4TxODlBbBfKE_jJz6Hl7y1HIRsUV_p1FYdeiD
 
 ## Build Services:
 
-1. [Launchpad] (https://github.com/AnsiPress/NGINX#launchpad)
-2. [OpenSUSE Build Services] (https://github.com/AnsiPress/NGINX#opensuse-build-services)
+1. [Launchpad](https://github.com/AnsiPress/NGINX#launchpad)
+2. [OpenSUSE Build Services](https://github.com/AnsiPress/NGINX#opensuse-build-services)
 
 
 ### Launchpad:
