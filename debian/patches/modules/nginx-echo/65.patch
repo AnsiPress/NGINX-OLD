@@ -1,0 +1,333 @@
+From d16babcc09050966f5055df41572429bd84d811a Mon Sep 17 00:00:00 2001
+From: Andrei Belov <defanator@gmail.com>
+Date: Wed, 22 Mar 2017 08:43:30 +0300
+Subject: [PATCH 1/3] fixed build with nginx/1.11.11
+
+Closes openresty/echo-nginx-module#64
+
+See also:
+http://hg.nginx.org/nginx/rev/e662cbf1b932
+---
+ src/ngx_http_echo_request_info.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/src/ngx_http_echo_request_info.c b/src/ngx_http_echo_request_info.c
+index d28ec4d..27b3c52 100644
+--- a/src/ngx_http_echo_request_info.c
++++ b/src/ngx_http_echo_request_info.c
+@@ -179,6 +179,9 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     ngx_int_t                    i, j;
+     ngx_buf_t                   *b, *first = NULL;
+     unsigned                     found;
++#if defined(nginx_version) && nginx_version >= 1011011
++    ngx_chain_t                 *cl;
++#endif
+     ngx_connection_t            *c;
+     ngx_http_request_t          *mr;
+     ngx_http_connection_t       *hc;
+@@ -215,8 +218,15 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+ 
+     if (hc->nbusy) {
+         b = NULL;
++
++#if defined(nginx_version) && nginx_version >= 1011011
++         for (cl = hc->busy; cl; /* void */) {
++             b = cl->buf;
++             cl = cl->next;
++#else
+         for (i = 0; i < hc->nbusy; i++) {
+             b = hc->busy[i];
++#endif
+ 
+             if (first == NULL) {
+                 if (mr->request_line.data >= b->pos
+@@ -280,8 +290,15 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     }
+ 
+     if (hc->nbusy) {
++
++#if defined(nginx_version) && nginx_version >= 1011011
++         for (cl = hc->busy; cl; /* void */) {
++             b = cl->buf;
++             cl = cl->next;
++#else
+         for (i = 0; i < hc->nbusy; i++) {
+             b = hc->busy[i];
++#endif
+ 
+             if (!found) {
+                 if (b != first) {
+
+From 24923db4880644d161c39cefb073d87c9ee01a60 Mon Sep 17 00:00:00 2001
+From: Andrei Belov <defanator@gmail.com>
+Date: Tue, 11 Apr 2017 10:10:19 +0300
+Subject: [PATCH 2/3] Refactor busy buffers handling in nginx >= 1.11.11
+
+---
+ src/ngx_http_echo_module.h       |  4 ++++
+ src/ngx_http_echo_request_info.c | 38 ++++++++++++++++++++++++++++++++------
+ 2 files changed, 36 insertions(+), 6 deletions(-)
+
+diff --git a/src/ngx_http_echo_module.h b/src/ngx_http_echo_module.h
+index 2d212c3..326aadb 100644
+--- a/src/ngx_http_echo_module.h
++++ b/src/ngx_http_echo_module.h
+@@ -92,6 +92,10 @@ typedef struct {
+ 
+ typedef struct {
+     ngx_int_t       requires_filter;
++#if defined(nginx_version) && nginx_version >= 1011011
++    ngx_buf_t     **busy_bufs_ptrs;
++    ngx_int_t       prealloc_nbusy;
++#endif
+ } ngx_http_echo_main_conf_t;
+ 
+ 
+diff --git a/src/ngx_http_echo_request_info.c b/src/ngx_http_echo_request_info.c
+index 27b3c52..30b43c4 100644
+--- a/src/ngx_http_echo_request_info.c
++++ b/src/ngx_http_echo_request_info.c
+@@ -180,7 +180,9 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     ngx_buf_t                   *b, *first = NULL;
+     unsigned                     found;
+ #if defined(nginx_version) && nginx_version >= 1011011
++    ngx_buf_t                  **bb;
+     ngx_chain_t                 *cl;
++    ngx_http_echo_main_conf_t   *emcf;
+ #endif
+     ngx_connection_t            *c;
+     ngx_http_request_t          *mr;
+@@ -198,6 +200,10 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     }
+ #endif
+ 
++#if defined(nginx_version) && nginx_version >= 1011011
++    emcf = ngx_http_get_module_main_conf(r, ngx_http_echo_module);
++#endif
++
+     size = 0;
+     b = c->buffer;
+ 
+@@ -220,9 +226,29 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+         b = NULL;
+ 
+ #if defined(nginx_version) && nginx_version >= 1011011
+-         for (cl = hc->busy; cl; /* void */) {
+-             b = cl->buf;
+-             cl = cl->next;
++        if (hc->nbusy > emcf->prealloc_nbusy) {
++            if (emcf->busy_bufs_ptrs) {
++                ngx_free(emcf->busy_bufs_ptrs);
++            }
++
++            emcf->busy_bufs_ptrs = ngx_alloc(hc->nbusy * sizeof(ngx_buf_t *),
++                                             r->connection->log);
++
++            if (emcf->busy_bufs_ptrs == NULL) {
++                return NGX_ERROR;
++            }
++
++            emcf->prealloc_nbusy = hc->nbusy;
++        }
++
++        bb = emcf->busy_bufs_ptrs;
++        for (cl = hc->busy; cl; cl = cl->next) {
++            *bb++ = cl->buf;
++        }
++
++        bb = emcf->busy_bufs_ptrs;
++        for (i = hc->nbusy; i > 0; i--) {
++            b = bb[i - 1];
+ #else
+         for (i = 0; i < hc->nbusy; i++) {
+             b = hc->busy[i];
+@@ -292,9 +318,9 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     if (hc->nbusy) {
+ 
+ #if defined(nginx_version) && nginx_version >= 1011011
+-         for (cl = hc->busy; cl; /* void */) {
+-             b = cl->buf;
+-             cl = cl->next;
++        bb = emcf->busy_bufs_ptrs;
++        for (i = hc->nbusy; i > 0; i--) {
++            b = bb[i - 1];
+ #else
+         for (i = 0; i < hc->nbusy; i++) {
+             b = hc->busy[i];
+
+From 4b06b5bef3be1b58d2e585516a85d35ce6e5ce98 Mon Sep 17 00:00:00 2001
+From: Andrei Belov <defanator@gmail.com>
+Date: Mon, 17 Apr 2017 17:23:04 +0300
+Subject: [PATCH 3/3] Improve wording, add cleanup handler
+
+---
+ src/ngx_http_echo_module.c       | 13 +++++++++++
+ src/ngx_http_echo_module.h       |  6 ++---
+ src/ngx_http_echo_request_info.c | 47 ++++++++++++++++++++++++++++------------
+ src/ngx_http_echo_request_info.h |  3 +++
+ 4 files changed, 52 insertions(+), 17 deletions(-)
+
+diff --git a/src/ngx_http_echo_module.c b/src/ngx_http_echo_module.c
+index ae70479..8d736d7 100644
+--- a/src/ngx_http_echo_module.c
++++ b/src/ngx_http_echo_module.c
+@@ -632,6 +632,9 @@ ngx_http_echo_echo_exec(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
+ static void *
+ ngx_http_echo_create_main_conf(ngx_conf_t *cf)
+ {
++#if nginx_version >= 1011011
++    ngx_pool_cleanup_t           *cln;
++#endif
+     ngx_http_echo_main_conf_t    *emcf;
+ 
+     emcf = ngx_pcalloc(cf->pool, sizeof(ngx_http_echo_main_conf_t));
+@@ -643,6 +646,16 @@ ngx_http_echo_create_main_conf(ngx_conf_t *cf)
+      *      hmcf->requires_filter = 0;
+      */
+ 
++#if nginx_version >= 1011011
++    cln = ngx_pool_cleanup_add(cf->pool, 0);
++    if (cln == NULL) {
++        return NULL;
++    }
++
++    cln->data = emcf;
++    cln->handler = ngx_http_echo_request_headers_cleanup;
++#endif
++
+     return emcf;
+ }
+ 
+diff --git a/src/ngx_http_echo_module.h b/src/ngx_http_echo_module.h
+index 326aadb..ce0a305 100644
+--- a/src/ngx_http_echo_module.h
++++ b/src/ngx_http_echo_module.h
+@@ -92,9 +92,9 @@ typedef struct {
+ 
+ typedef struct {
+     ngx_int_t       requires_filter;
+-#if defined(nginx_version) && nginx_version >= 1011011
+-    ngx_buf_t     **busy_bufs_ptrs;
+-    ngx_int_t       prealloc_nbusy;
++#if nginx_version >= 1011011
++    ngx_buf_t     **busy_buf_ptrs;
++    ngx_int_t       busy_buf_ptr_count;
+ #endif
+ } ngx_http_echo_main_conf_t;
+ 
+diff --git a/src/ngx_http_echo_request_info.c b/src/ngx_http_echo_request_info.c
+index 30b43c4..7dd3683 100644
+--- a/src/ngx_http_echo_request_info.c
++++ b/src/ngx_http_echo_request_info.c
+@@ -17,6 +17,9 @@
+ 
+ 
+ static void ngx_http_echo_post_read_request_body(ngx_http_request_t *r);
++#if nginx_version >= 1011011
++void ngx_http_echo_request_headers_cleanup(void *data);
++#endif
+ 
+ 
+ ngx_int_t
+@@ -179,7 +182,7 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     ngx_int_t                    i, j;
+     ngx_buf_t                   *b, *first = NULL;
+     unsigned                     found;
+-#if defined(nginx_version) && nginx_version >= 1011011
++#if nginx_version >= 1011011
+     ngx_buf_t                  **bb;
+     ngx_chain_t                 *cl;
+     ngx_http_echo_main_conf_t   *emcf;
+@@ -200,7 +203,7 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     }
+ #endif
+ 
+-#if defined(nginx_version) && nginx_version >= 1011011
++#if nginx_version >= 1011011
+     emcf = ngx_http_get_module_main_conf(r, ngx_http_echo_module);
+ #endif
+ 
+@@ -225,28 +228,28 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+     if (hc->nbusy) {
+         b = NULL;
+ 
+-#if defined(nginx_version) && nginx_version >= 1011011
+-        if (hc->nbusy > emcf->prealloc_nbusy) {
+-            if (emcf->busy_bufs_ptrs) {
+-                ngx_free(emcf->busy_bufs_ptrs);
++#if nginx_version >= 1011011
++        if (hc->nbusy > emcf->busy_buf_ptr_count) {
++            if (emcf->busy_buf_ptrs) {
++                ngx_free(emcf->busy_buf_ptrs);
+             }
+ 
+-            emcf->busy_bufs_ptrs = ngx_alloc(hc->nbusy * sizeof(ngx_buf_t *),
+-                                             r->connection->log);
++            emcf->busy_buf_ptrs = ngx_alloc(hc->nbusy * sizeof(ngx_buf_t *),
++                                            r->connection->log);
+ 
+-            if (emcf->busy_bufs_ptrs == NULL) {
++            if (emcf->busy_buf_ptrs == NULL) {
+                 return NGX_ERROR;
+             }
+ 
+-            emcf->prealloc_nbusy = hc->nbusy;
++            emcf->busy_buf_ptr_count = hc->nbusy;
+         }
+ 
+-        bb = emcf->busy_bufs_ptrs;
++        bb = emcf->busy_buf_ptrs;
+         for (cl = hc->busy; cl; cl = cl->next) {
+             *bb++ = cl->buf;
+         }
+ 
+-        bb = emcf->busy_bufs_ptrs;
++        bb = emcf->busy_buf_ptrs;
+         for (i = hc->nbusy; i > 0; i--) {
+             b = bb[i - 1];
+ #else
+@@ -317,8 +320,8 @@ ngx_http_echo_client_request_headers_variable(ngx_http_request_t *r,
+ 
+     if (hc->nbusy) {
+ 
+-#if defined(nginx_version) && nginx_version >= 1011011
+-        bb = emcf->busy_bufs_ptrs;
++#if nginx_version >= 1011011
++        bb = emcf->busy_buf_ptrs;
+         for (i = hc->nbusy; i > 0; i--) {
+             b = bb[i - 1];
+ #else
+@@ -500,4 +503,20 @@ ngx_http_echo_response_status_variable(ngx_http_request_t *r,
+     return NGX_OK;
+ }
+ 
++
++#if nginx_version >= 1011011
++void
++ngx_http_echo_request_headers_cleanup(void *data)
++{
++    ngx_http_echo_main_conf_t  *emcf;
++
++    emcf = (ngx_http_echo_main_conf_t *) data;
++
++    if (emcf->busy_buf_ptrs) {
++        ngx_free(emcf->busy_buf_ptrs);
++        emcf->busy_buf_ptrs = NULL;
++    }
++}
++#endif
++
+ /* vi:set ft=c ts=4 sw=4 et fdm=marker: */
+diff --git a/src/ngx_http_echo_request_info.h b/src/ngx_http_echo_request_info.h
+index 3b3713b..aa5730b 100644
+--- a/src/ngx_http_echo_request_info.h
++++ b/src/ngx_http_echo_request_info.h
+@@ -29,5 +29,8 @@ ngx_int_t ngx_http_echo_request_uri_variable(ngx_http_request_t *r,
+ ngx_int_t ngx_http_echo_response_status_variable(ngx_http_request_t *r,
+     ngx_http_variable_value_t *v, uintptr_t data);
+ 
++#if nginx_version >= 1011011
++void ngx_http_echo_request_headers_cleanup(void *data);
++#endif
+ 
+ #endif /* ECHO_REQUEST_INFO_H */
