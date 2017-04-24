@@ -184,13 +184,17 @@ nginx_1.10.3-1+xenial.debian.tar.xz
 ```
 
 ```
-$ sudo apt-get install osc
-$ cd
-$ osc co home:MiteshShah/nginx
-$ cd home:MiteshShah/nginx
-$ osc rm *
-$ rsync -avzP --exclude="modules" --exclude="nginx-1.12.0" ~/PPA/nginx/* ~/home:MiteshShah/nginx/
-$ osc add *
-$ osc ci -m "NGINX 1.12.0"
+^_^[Mitesh@Shah:~]$ cd ~/PPA/nginx/nginx-1.10.3
+# For new nginx version 1.10.3
+^_^[Mitesh@Shah:~]$ debuild -S -sa --source-option=--include-binaries -k'BE143B73'
+# For minor changes on existing nginx 1.10.3
+
+^_^[Mitesh@Shah:~]$ cd
+^_^[Mitesh@Shah:~]$ osc co home:MiteshShah/nginx
+^_^[Mitesh@Shah:~]$ cd home:MiteshShah/nginx
+^_^[Mitesh@Shah:~]$ osc rm *
+^_^[Mitesh@Shah:~]$ rsync -avzP --exclude="modules" --exclude="nginx-1.12.0" ~/PPA/nginx/* ~/home:MiteshShah/nginx/
+^_^[Mitesh@Shah:~]$ osc add *
+^_^[Mitesh@Shah:~]$ osc ci -m "NGINX 1.12.0"
 
 ```
