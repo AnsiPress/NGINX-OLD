@@ -20,10 +20,10 @@ README for Modules versions
   Homepage: https://github.com/agentzh/echo-nginx-module
   Version: 7740e11558b530b66b469c657576f5280b7cdb1b
 
- nginx-lua
-  Homepage: https://github.com/openresty/lua-nginx-module
-  Version: v0.10.8
-  Patch: openssl-1.1.0.patch
+# nginx-lua
+#  Homepage: https://github.com/openresty/lua-nginx-module
+#  Version: v0.10.8
+#  Patch: openssl-1.1.0.patch
 
  nginx-upstream-fair
   Homepage: https://github.com/gnosek/nginx-upstream-fair

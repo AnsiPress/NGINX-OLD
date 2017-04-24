@@ -146,17 +146,17 @@ After that check you INBOX and click of verification link
 ### Download NGINX Build Script
 ```
 ^_^[Mitesh@Shah:~]$ wget -c https://raw.githubusercontent.com/AnsiPress/NGINX/master/build.sh
-^_^[Mitesh@Shah:~]$ bash build.sh 1.10.3 Mr.Miteshah@gmail.com
+^_^[Mitesh@Shah:~]$ bash build.sh 1.12.0 Mr.Miteshah@gmail.com
 ```
 
 ### Make A Debian Source For Upload To PPA:
 
 ```
-^_^[Mitesh@Shah:~]$ cd ~/PPA/nginx/nginx-1.10.3
-# For new nginx version 1.10.3
+^_^[Mitesh@Shah:~]$ cd ~/PPA/nginx/nginx-1.12.0
+# For new nginx version 1.12.0
 ^_^[Mitesh@Shah:~]$ debuild -S -sa --source-option=--include-binaries -k'BE143B73'
-# For minor changes on existing nginx 1.10.3
-# Download nginx_1.10.3.orig.tar.xz from launchpad
+# For minor changes on existing nginx 1.12.0
+# Download nginx_1.12.0.orig.tar.xz from launchpad
 ^_^[Mitesh@Shah:~]$ debuild -S --source-option=--include-binaries -k'BE143B73'
 ```
 
@@ -165,7 +165,7 @@ After that check you INBOX and click of verification link
 ### Launchpad
 
 ```
-^_^[Mitesh@Shah:~]$ dput ppa:ansipress/nginx ~/PPA/nginx/nginx_1.10.3-1+xenial_source.changes
+^_^[Mitesh@Shah:~]$ dput ppa:ansipress/nginx ~/PPA/nginx/nginx_1.12.0-1+xenial_source.changes
 ```
 
 ### OpenSUSE Builder
@@ -190,10 +190,10 @@ nginx_1.10.3-1+xenial.debian.tar.xz
 # For minor changes on existing nginx 1.10.3
 
 ^_^[Mitesh@Shah:~]$ cd
-^_^[Mitesh@Shah:~]$ osc co home:MiteshShah/nginx
-^_^[Mitesh@Shah:~]$ cd home:MiteshShah/nginx
+^_^[Mitesh@Shah:~]$ osc co home:AnsiPress/nginx
+^_^[Mitesh@Shah:~]$ cd home:AnsiPress/nginx
 ^_^[Mitesh@Shah:~]$ osc rm *
-^_^[Mitesh@Shah:~]$ rsync -avzP --exclude="modules" --exclude="nginx-1.12.0" ~/PPA/nginx/* ~/home:MiteshShah/nginx/
+^_^[Mitesh@Shah:~]$ rsync -avzP --exclude="modules" --exclude="nginx-1.12.0" ~/PPA/nginx/* ~/home:AnsiPress/nginx/
 ^_^[Mitesh@Shah:~]$ osc add *
 ^_^[Mitesh@Shah:~]$ osc ci -m "NGINX 1.12.0"
 

@@ -63,7 +63,7 @@ ppa_lib_echo "Downloading NGINX modules, please wait"
 mkdir ~/PPA/nginx/modules && cd ~/PPA/nginx/modules \
 || ppa_error "Unable to create ~/PPA/nginx/modules, exit status = " $?
 
-ppa_lib_echo "1/3 ngx_pagespeed"
+ppa_lib_echo "1/1 ngx_pagespeed"
 NPS_VERSION=1.11.33.4
 wget https://github.com/pagespeed/ngx_pagespeed/archive/v${NPS_VERSION}-beta.tar.gz && \
 tar -zxvf v${NPS_VERSION}-beta.tar.gz && \

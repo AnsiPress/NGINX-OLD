@@ -4,7 +4,7 @@ nginx (1.12.0-1+xenial) xenial; urgency=medium
   * Updated nginx-echo modules
   * Removed nginx-lua modules
 
- -- Mitesh Shah <Mr.Miteshah@gmail.com>  Fri, 21 Feb 2017 14:41:49 +0530
+ -- Mitesh Shah <Mr.Miteshah@gmail.com>  Mon, 24 Apr 2017 16:51:49 +0530
 
 nginx (1.10.3-1+xenial) xenial; urgency=medium
 
