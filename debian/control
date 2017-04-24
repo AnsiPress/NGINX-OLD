@@ -149,7 +149,6 @@ Depends: libnginx-mod-http-auth-pam (= ${binary:Version}),
          libnginx-mod-http-geoip (= ${binary:Version}),
          libnginx-mod-http-headers-more-filter (= ${binary:Version}),
          libnginx-mod-http-image-filter (= ${binary:Version}),
-         libnginx-mod-http-lua (= ${binary:Version}),
          libnginx-mod-http-perl (= ${binary:Version}),
          libnginx-mod-http-subs-filter (= ${binary:Version}),
          libnginx-mod-http-uploadprogress (= ${binary:Version}),
@@ -199,7 +198,6 @@ Depends: libnginx-mod-http-auth-pam (= ${binary:Version}),
          libnginx-mod-http-geoip (= ${binary:Version}),
          libnginx-mod-http-headers-more-filter (= ${binary:Version}),
          libnginx-mod-http-image-filter (= ${binary:Version}),
-         libnginx-mod-http-lua (= ${binary:Version}),
          libnginx-mod-http-subs-filter (= ${binary:Version}),
          libnginx-mod-http-uploadprogress (= ${binary:Version}),
          libnginx-mod-http-upstream-fair (= ${binary:Version}),
@@ -304,18 +302,6 @@ Description: PAM authentication module for Nginx
  The module uses PAM as a backend for simple http authentication. It
  also allows setting the pam service name to allow more fine grained control.
 
-Package: libnginx-mod-http-lua
-Architecture: any
-Depends: libnginx-mod-http-ndk (= ${binary:Version}),
-         ${misc:Depends},
-         ${shlibs:Depends}
-Description: LUA module for Nginx
- Embed LUA runtime into nginx.
- .
- This module embeds Lua, via the standard Lua 5.1 interpreter or LuaJIT
- 2.0/2.1, into Nginx and by leveraging Nginx's subrequests, allows the
- integration of the powerful Lua threads (Lua coroutines) into the Nginx event
- model.
 
 Package: libnginx-mod-http-ndk
 Architecture: any

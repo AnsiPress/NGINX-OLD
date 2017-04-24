@@ -1,7 +1,8 @@
 nginx (1.12.0-1+xenial) xenial; urgency=medium
 
   * 1.12.x stable branch.
-  * Updated nginx-echo & nginx-lua modules
+  * Updated nginx-echo modules
+  * Removed nginx-lua modules
 
  -- Mitesh Shah <Mr.Miteshah@gmail.com>  Fri, 21 Feb 2017 14:41:49 +0530
 
