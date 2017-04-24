@@ -30,7 +30,7 @@ CfCmd.new do
       group: "pubsub",
       tags: [ 'publisher', 'hook' ],
       value: "<url>",
-      uri: "/details#message-publishing-callbacks",
+      uri: "#message-forwarding",
       info: <<-EOS.gsub(/^ {8}/, '')
         Send POST request to internal location (which may proxy to an upstream server) with published message in the request body. Useful for bridging websocket publishers with HTTP applications, or for transforming message via upstream application before publishing to a channel.  
         The upstream response code determines how publishing will proceed. A `200 OK` will publish the message from the upstream response's body. A `304 Not Modified` will publish the message as it was received from the publisher. A `204 No Content` will result in the message not being published.
@@ -62,6 +62,7 @@ CfCmd.new do
       :nchan_pubsub_directive,
       :loc_conf,
       args: 0..6,
+      alt: ["nchan_pubsub_location"],
       
       group: "pubsub",
       tags: [ 'publisher', 'subscriber', 'pubsub' ],
@@ -98,6 +99,7 @@ CfCmd.new do
       :loc_conf,
       args: 0..5,
       legacy: "push_subscriber",
+      alt: ["nchan_subscriber_location"],
       
       group: "pubsub",
       tags: ['subscriber'],
@@ -188,11 +190,23 @@ CfCmd.new do
       default: "0 (none)",
       info: "Interval for sending websocket ping frames. Disabled by default."
   
+  nchan_websocket_client_heartbeat [:srv, :loc, :if],
+      :nchan_websocket_heartbeat_directive,
+      [:loc_conf, :websocket_heartbeat],
+      args: 2,
+      
+      group: "pubsub",
+      tags:['subscriber-websocket'],
+      value: "<heartbeat_in> <heartbeat_out>",
+      default: "none (disabled)",
+      info: "Most browser Websocket clients do not allow manually sending PINGs to the server. To overcome this limitation, this setting can be used to set up a PING/PONG message/response connection heartbeat. When the client sends the server message *heartbeat_in* (PING), the server automatically responds with *heartbeat_out* (PONG)."
+  
   nchan_publisher [:srv, :loc, :if],
       :nchan_publisher_directive,
       :loc_conf,
       args: 0..2,
       legacy: "push_publisher",
+      alt: ["nchan_publisher_location"],
       
       group: "pubsub",
       tags: ['publisher'],
@@ -221,7 +235,7 @@ CfCmd.new do
       tags: ['publisher', 'subscriber', 'hook'],
       value: "<url>",
       info: "Send GET request to internal location (which may proxy to an upstream server) for authorization of a publisher or subscriber request. A 200 response authorizes the request, a 403 response forbids it.",
-      uri: "/details#request-authorization"
+      uri: "#request-authorization"
   
   nchan_subscribe_request [:srv, :loc, :if], 
       :ngx_http_set_complex_value_slot,
@@ -231,7 +245,7 @@ CfCmd.new do
       tags: ['subscriber', 'hook'],
       value: "<url>",
       info: "Send GET request to internal location (which may proxy to an upstream server) after subscribing. Disabled for longpoll and interval-polling subscribers.",
-      uri: "/details#subsribe-and-unsubscribe-callbacks"
+      uri: "#subscriber-presence"
   
   nchan_unsubscribe_request [:srv, :loc, :if], 
       :ngx_http_set_unsubscribe_request_url,
@@ -241,7 +255,7 @@ CfCmd.new do
       tags: ['subscriber', 'hook'],
       value: "<url>",
       info: "Send GET request to internal location (which may proxy to an upstream server) after unsubscribing. Disabled for longpoll and interval-polling subscribers.",
-      uri: "/details#subsribe-and-unsubscribe-callbacks"
+      uri: "#subscriber-presence"
   
   nchan_store_messages [:main, :srv, :loc, :if],
       :nchan_store_messages_directive,
@@ -255,7 +269,7 @@ CfCmd.new do
       info: "Publisher configuration. \"`off`\" is equivalent to setting `nchan_message_buffer_length 0`, which disables the buffering of old messages. Using this setting is not recommended when publishing very quickly, as it may result in missed messages."
     
   nchan_max_reserved_memory [:main],
-      :ngx_conf_set_size_slot,
+      :nchan_conf_set_size_slot,
       [:main_conf, :shm_size],
       legacy: "push_max_reserved_memory",
       
@@ -274,7 +288,7 @@ CfCmd.new do
       tags: ['redis'],
       default: "127.0.0.1:6379",
       info: "The path to a redis server, of the form 'redis://:password@hostname:6379/0'. Shorthand of the form 'host:port' or just 'host' is also accepted.",
-      uri: "/details#using-redis"
+      uri: "#connecting-to-a-redis-server"
   
   nchan_redis_pass [:main, :srv, :loc],
       :ngx_conf_set_redis_upstream_pass,
@@ -283,7 +297,7 @@ CfCmd.new do
       group: "storage",
       tags: ['publisher', 'subscriber', 'redis'],
       info: "Use an upstream config block for Redis servers.",
-      uri: "/details#using-redis"
+      uri: "#redis-cluster"
   
   nchan_redis_pass_inheritable [:main, :srv, :loc],
       :ngx_conf_set_flag_slot,
@@ -304,7 +318,21 @@ CfCmd.new do
       group: "storage",
       tags: ['redis'],
       info: "Used in upstream { } blocks to set redis servers.",
-      uri: "/details#using-redis"
+      uri: "#redis-cluster"
+  
+  nchan_redis_storage_mode [:main, :srv, :upstream], 
+      :ngx_conf_set_redis_storage_mode_slot,
+      [:loc_conf, :"redis.storage_mode"],
+      
+      group: "storage",
+      tags: ['redis'],
+      value: ["distributed", "backup"],
+      default: "distributed",
+      info: <<-EOS.gsub(/^ {8}/, '')
+        The mode of operation of the Redis server. In `distributed` mode, messages are published directly to Redis, and retrieved in real-time. Any number of Nchan servers in distributed mode can share the Redis server (or cluster). Useful for horizontal scalability, but suffers the latency penalty of all message publishing going through Redis first.
+        
+        In `backup` mode, messages are published locally first, then later forwarded to Redis, and are retrieved only upon chanel initialization. Only one Nchan server should use a Redis server (or cluster) in this mode. Useful for data persistence without sacrificing response times to the latency of a round-trip to Redis.
+      EOS
   
   nchan_use_redis [:main, :srv, :loc],
       :ngx_conf_enable_redis,
@@ -315,7 +343,7 @@ CfCmd.new do
       value: [ :on, :off ],
       default: :off,
       info: "Use redis for message storage at this location.", 
-      uri: "/details#using-redis"
+      uri: "#connecting-to-a-redis-server"
   
   nchan_redis_ping_interval [:main, :srv, :loc],
       :ngx_conf_set_sec_slot,
@@ -325,6 +353,16 @@ CfCmd.new do
       tags: ['redis'],
       default: "4m",
       info: "Send a keepalive command to redis to keep the Nchan redis clients from disconnecting. Set to 0 to disable."
+  
+    nchan_redis_namespace [:main, :srv, :upstream], 
+      :ngx_conf_set_redis_namespace_slot,
+      [:loc_conf, :"redis.namespace"],
+      args: 1,
+      
+      group: "storage",
+      value: "<string>",
+      tags: ['redis'],
+      info: "Prefix all Redis keys with this string. All Nchan-related keys in redis will be of the form \"nchan_redis_namespace:*\" . Default is empty."
   
   nchan_redis_fakesub_timer_interval [:main],
       :ngx_conf_set_msec_slot,
@@ -379,26 +417,96 @@ CfCmd.new do
       info: "Whether or not a subscriber may create a channel by sending a request to a subscriber location. If set to on, a publisher must send a POST or PUT request before a subscriber can request messages on the channel. Otherwise, all subscriber requests to nonexistent channels will get a 403 Forbidden response."
   
   nchan_access_control_allow_origin [:main, :srv, :loc], 
-      :ngx_conf_set_str_slot,
+      :ngx_http_set_complex_value_slot,
       [:loc_conf, :allow_origin],
       args: 1,
       
       group: "security",
       value: "<string>",
       tags: ['publisher', 'subscriber'],
-      default: "*",
-      info: "Set the [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) `Access-Control-Allow-Origin` header to this value. If the publisher or subscriber request's `Origin` header does not match this value, respond with a `403 Forbidden`."
+      default: "$http_origin",
+      info: "Set the [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) `Access-Control-Allow-Origin` header to this value. If the incoming request's `Origin` header does not match this value, respond with a `403 Forbidden`."
   
   nchan_channel_group [:srv, :loc, :if], 
-      :ngx_conf_set_str_slot, 
+      :ngx_http_set_complex_value_slot, 
       [:loc_conf, :channel_group],
       legacy: "push_channel_group",
       
       group: "security",
-      tags: ['publisher', 'subscriber', 'channel-events'],
+      tags: ['publisher', 'subscriber', 'channel-events', 'group'],
       value: "<string>",
       default: "(none)",
-      info: "Because settings are bound to locations and not individual channels, it is useful to be able to have channels that can be reached only from some locations and never others. That's where this setting comes in. Think of it as a prefix string for the channel id."
+      info: "The accounting and security group a channel belongs to. Works like a prefix string to the channel id. Can be set with nginx variables."
+  
+  nchan_channel_group_accounting [:srv, :loc], 
+      :ngx_conf_set_flag_slot,
+      [:loc_conf, "group.enable_accounting"],
+      
+      group: "security",
+      tags: ['group', 'security'],
+      default: "off",
+      info: "Enable tracking channel, subscriber, and message information on a per-channel-group basis. Can be used to place upper limits on channel groups."
+  
+  nchan_group_location [:loc], 
+      :nchan_group_directive, 
+      [:loc_conf],
+      args: 0..3,
+      
+      group: "security",
+      tags: ['group'],
+      value: ["get", "set", "delete", "off"],
+      default: ["get", "set", "delete"],
+      info: "Group information and configuration location. GET request for group info, POST to set limits, DELETE to delete all channels in group."
+  
+  nchan_group_max_channels [:loc], 
+      :ngx_http_set_complex_value_slot, 
+      [:loc_conf, "group.max_channels"],
+      
+      group: "security",
+      tags: ['group', 'security'],
+      value: "<number>",
+      default: "0 (unlimited)",
+      info: "Maximum number of channels allowed in the group."
+  
+  nchan_group_max_messages [:loc], 
+      :ngx_http_set_complex_value_slot, 
+      [:loc_conf, "group.max_messages"],
+      
+      group: "security",
+      tags: ['group', 'security'],
+      value: "<number>",
+      default: "0 (unlimited)",
+      info: "Maximum number of messages allowed for all the channels in the group."
+  
+  nchan_group_max_messages_memory [:loc], 
+      :ngx_http_set_complex_value_slot, 
+      [:loc_conf, "group.max_messages_shm_bytes"],
+      
+      group: "security",
+      tags: ['group', 'security'],
+      value: "<number>",
+      default: "0 (unlimited)",
+      info: "Maximum amount of shared memory allowed for the messages of all the channels in the group."
+  
+  nchan_group_max_messages_disk [:loc], 
+      :ngx_http_set_complex_value_slot, 
+      [:loc_conf, "group.max_messages_file_bytes"],
+      
+      group: "security",
+      tags: ['group', 'security'],
+      value: "<number>",
+      default: "0 (unlimited)",
+      info: "Maximum amount of disk space allowed for the messages of all the channels in the group."
+  
+  nchan_group_max_subscribers [:loc], 
+      :ngx_http_set_complex_value_slot, 
+      [:loc_conf, "group.max_subscribers"],
+      
+      group: "security",
+      tags: ['group', 'security'],
+      value: "<number>",
+      default: "0 (unlimited)",
+      info: "Maximum number of subscribers allowed for the messages of all the channels in the group."
   
   nchan_channel_events_channel_id [:srv, :loc, :if],
       :nchan_set_channel_events_channel_id,
@@ -406,8 +514,8 @@ CfCmd.new do
       args: 1,
       
       group: "meta",
-      tags: ['publisher', 'subscriber', 'channel-events'],
-      uri: "/details#channel-events",
+      tags: ['publisher', 'subscriber', 'channel-events', 'introspection'],
+      uri: "#channel-events",
       info: "Channel id where `nchan_channel_id`'s events should be sent. Events like subscriber enqueue/dequeue, publishing messages, etc. Useful for application debugging. The channel event message is configurable via nchan_channel_event_string. The channel group for events is hardcoded to 'meta'."
   
   nchan_stub_status [:loc],
@@ -416,15 +524,16 @@ CfCmd.new do
       args: 0,
       
       group: "meta",
+      tags: ['introspection'],
       info: "Similar to Nginx's stub_status directive, requests to an `nchan_stub_status` location get a response with some vital Nchan statistics. This data does not account for information from other Nchan instances, and monitors only local connections, published messages, etc.",
-      uri: "/details#nchan_stub_status"
+      uri: "#nchan_stub_status"
   
   nchan_channel_event_string [:srv, :loc, :if], 
       :ngx_http_set_complex_value_slot,
       [:loc_conf, :channel_event_string],
       
       group: "meta",
-      tags: ['publisher', 'subscriber', 'channel-events'],
+      tags: ['publisher', 'subscriber', 'channel-events', 'introspection'],
       value: "<string>",
       default: "\"$nchan_channel_event $nchan_channel_id\"",
       info: "Contents of channel event message"

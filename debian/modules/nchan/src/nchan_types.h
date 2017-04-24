@@ -8,6 +8,10 @@ typedef ngx_int_t (*callback_pt)(ngx_int_t, void *, void *);
 typedef enum {MSG_CHANNEL_NOTREADY, MSG_NORESPONSE, MSG_INVALID, MSG_PENDING, MSG_NOTFOUND, MSG_FOUND, MSG_EXPECTED, MSG_EXPIRED} nchan_msg_status_t;
 typedef enum {INACTIVE, NOTREADY, WAITING, STUBBED, READY} chanhead_pubsub_status_t;
 
+typedef enum {NCHAN_CONTENT_TYPE_PLAIN, NCHAN_CONTENT_TYPE_JSON, NCHAN_CONTENT_TYPE_XML, NCHAN_CONTENT_TYPE_YAML, NCHAN_CONTENT_TYPE_HTML} nchan_content_type_t;
+
+typedef enum {REDIS_MODE_CONF_UNSET = NGX_CONF_UNSET, REDIS_MODE_BACKUP = 1, REDIS_MODE_DISTRIBUTED = 2} nchan_redis_storage_mode_t;
+
 typedef enum {
   SUB_ENQUEUE, SUB_DEQUEUE, SUB_RECEIVE_MESSAGE, SUB_RECEIVE_STATUS, 
   CHAN_PUBLISH, CHAN_DELETE  
@@ -24,6 +28,8 @@ typedef struct {
   ngx_str_t                     url;
   ngx_flag_t                    url_enabled;
   time_t                        ping_interval;
+  ngx_str_t                     namespace;
+  nchan_redis_storage_mode_t    storage_mode;
   ngx_str_t                     upstream_url;
   ngx_http_upstream_srv_conf_t *upstream;
   ngx_flag_t                    upstream_inheritable;
@@ -57,8 +63,8 @@ union nchan_msg_multitag {
 typedef struct {
   time_t                          time; //tag message by time
   union nchan_msg_multitag        tag;
-  unsigned                        tagactive:16;
-  unsigned                        tagcount:16;
+  int16_t                         tagactive;
+  int16_t                         tagcount;
 } nchan_msg_id_t;
 
 typedef struct {
@@ -83,14 +89,14 @@ typedef struct nchan_msg_s nchan_msg_t;
 struct nchan_msg_s {
   nchan_msg_id_t                  id;
   nchan_msg_id_t                  prev_id;
-  ngx_str_t                       content_type;
-  ngx_str_t                       eventsource_event;
+  ngx_str_t                      *content_type;
+  ngx_str_t                      *eventsource_event;
   //  ngx_str_t                   charset;
-  ngx_buf_t                      *buf;
+  ngx_buf_t                       buf;
   time_t                          expires;
   ngx_atomic_int_t                refcount;
   
-  struct nchan_msg_s             *reload_next;
+  //struct nchan_msg_s             *reload_next;
   
   unsigned                        shared:1; //for debugging
   unsigned                        temp_allocd:1;
@@ -150,6 +156,26 @@ typedef struct {
 
 typedef struct subscriber_s subscriber_t;
 
+typedef struct {
+  //must be made entirely of ngx_atomic_int_t
+  ngx_atomic_int_t                channels;
+  ngx_atomic_int_t                subscribers;
+  ngx_atomic_int_t                messages;
+  ngx_atomic_int_t                messages_shmem_bytes;
+  ngx_atomic_int_t                messages_file_bytes;
+} nchan_group_limits_t;
+
+typedef struct {
+  ngx_atomic_int_t               channels;
+  ngx_atomic_int_t               multiplexed_channels;
+  ngx_atomic_int_t               subscribers;
+  ngx_atomic_int_t               messages;
+  ngx_atomic_int_t               messages_shmem_bytes;
+  ngx_atomic_int_t               messages_file_bytes;
+  nchan_group_limits_t           limit;
+  ngx_str_t                      name;
+} nchan_group_t;
+
 typedef struct{
   //init
   ngx_int_t (*init_module)(ngx_cycle_t *cycle);
@@ -166,16 +192,14 @@ typedef struct{
   ngx_int_t (*subscribe)   (ngx_str_t *, subscriber_t *);
   ngx_int_t (*publish)     (ngx_str_t *, nchan_msg_t *, nchan_loc_conf_t *, callback_pt, void *);
   
+    //channel actions
   ngx_int_t (*delete_channel)(ngx_str_t *, nchan_loc_conf_t *, callback_pt, void *);
-  
-  //channel actions
   ngx_int_t (*find_channel)(ngx_str_t *, nchan_loc_conf_t *, callback_pt, void*);
   
-  
-  
-  //message actions and properties
-  ngx_str_t * (*message_etag)(nchan_msg_t *msg, ngx_pool_t *pool);
-  ngx_str_t * (*message_content_type)(nchan_msg_t *msg, ngx_pool_t *pool);
+  //group actions
+  ngx_int_t (*get_group)(ngx_str_t *name, nchan_loc_conf_t *, callback_pt, void *);
+  ngx_int_t (*set_group_limits)(ngx_str_t *name, nchan_loc_conf_t *, nchan_group_limits_t *limits, callback_pt, void *);
+  ngx_int_t (*delete_group)(ngx_str_t *name, nchan_loc_conf_t *, callback_pt, void *);
 
 } nchan_store_t;
 
@@ -195,6 +219,20 @@ typedef struct {
   unsigned                        eventsource:1;
   unsigned                        websocket:1;
 } nchan_conf_subscriber_types_t;
+
+typedef struct {
+  unsigned                        get:1;
+  unsigned                        set:1;
+  unsigned                        delete:1;
+  
+  ngx_int_t                       enable_accounting;
+  
+  ngx_http_complex_value_t       *max_channels;
+  ngx_http_complex_value_t       *max_subscribers;
+  ngx_http_complex_value_t       *max_messages;
+  ngx_http_complex_value_t       *max_messages_shm_bytes;
+  ngx_http_complex_value_t       *max_messages_file_bytes;
+} nchan_conf_group_t;
 
 #define NCHAN_COMPLEX_VALUE_ARRAY_MAX 8
 typedef struct {
@@ -226,12 +264,13 @@ struct nchan_loc_conf_s { //nchan_loc_conf_t
   nchan_complex_value_arr_t       pub_chid;
   nchan_complex_value_arr_t       sub_chid;
   nchan_complex_value_arr_t       pubsub_chid;
-  ngx_str_t                       channel_group;
+  ngx_http_complex_value_t       *channel_group;
+  
   ngx_str_t                       channel_id_split_delimiter;
   
   ngx_str_t                       subscriber_http_raw_stream_separator;
 
-  ngx_str_t                       allow_origin;
+  ngx_http_complex_value_t       *allow_origin;
   
   nchan_complex_value_arr_t       last_message_id;
   ngx_str_t                       custom_msgtag_header;
@@ -239,6 +278,7 @@ struct nchan_loc_conf_s { //nchan_loc_conf_t
   
   nchan_conf_publisher_types_t    pub;
   nchan_conf_subscriber_types_t   sub; 
+  nchan_conf_group_t              group;
   
   time_t                          subscriber_timeout;
   
@@ -248,6 +288,12 @@ struct nchan_loc_conf_s { //nchan_loc_conf_t
   ngx_str_t                       eventsource_event;
   
   time_t                          websocket_ping_interval;
+  
+  struct {
+    ngx_int_t   enabled;
+    ngx_str_t  *in;
+    ngx_str_t  *out;
+  }                               websocket_heartbeat;
   
   ngx_int_t                       subscriber_first_message;
   
@@ -264,12 +310,6 @@ struct nchan_loc_conf_s { //nchan_loc_conf_t
   time_t                          channel_timeout;
   nchan_store_t                  *storage_engine;
 };// nchan_loc_conf_t;
-
-typedef struct {
-  char              *subtype;
-  size_t             len;
-  const ngx_str_t   *format;
-} nchan_content_subtype_t;
 
 typedef struct nchan_llist_timed_s {
   struct nchan_llist_timed_s     *prev;
@@ -334,7 +374,10 @@ typedef struct {
   ngx_str_t                     *channel_event_name;
   ngx_str_t                      channel_id[NCHAN_MULTITAG_REQUEST_CTX_MAX];
   int                            channel_id_count;
-  ngx_str_t                      request_origin_header;
+  ngx_str_t                     *channel_group_name;
+  
+  ngx_str_t                     *request_origin_header;
+  ngx_str_t                     *allow_origin;
   
   ngx_int_t                      unsubscribe_request_callback_finalize_code;
   unsigned                       sent_unsubscribe_request:1;
